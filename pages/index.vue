@@ -18,12 +18,11 @@
 </template>
 
 <script>
-// const _omise = require('omise')({
-//   secretKey: process.env.OMISE_SECRET_KEY,
-// });
+
 
 export default {
   name: 'IndexPage',
+
 
   data() {
     return {
@@ -33,11 +32,12 @@ export default {
       omiseSecretKey: process.env.OMISE_SECRET_KEY,
 
       methods: [
-        { id: ``, name: `Credit Card` },
+        { id: `credit_card`, name: `Credit Card` },
         { id: `promptpay`, name: `Promptpay` },
         { id: `truemoney`, name: `True Money` },
         { id: `alipay`, name: `Alipay` },
-        { id: `barcode_wechat`, name: `Wechat` },
+        // { id: `barcode_wechat`, name: `Wechat` },
+        { id: `rabbit_linepay`, name: `Rabbit LINE Pay` },
       ],
 
       payload: {
@@ -49,8 +49,13 @@ export default {
       styles: {
         btn: `pointer-events-auto rounded-md px-4 py-2 text-center font-medium shadow-sm ring-1 ring-slate-700/10 hover:bg-slate-50`,
         btnPrimary: `pointer-events-auto rounded-md bg-indigo-600 px-3 py-2 text-[0.8125rem] font-semibold leading-5 text-white hover:bg-indigo-500`,
-      }
+      },
     }
+  },
+
+  async asyncData({ $axios }) {
+
+    return { version: 1 }
   },
 
   // SEO
@@ -68,8 +73,16 @@ export default {
     }
   },
 
-  mounted() {
+  async mounted() {
     this.initOmise()
+
+    // test api 
+    const meta = await this.$axios.get('/hello', {
+      params: {
+        name: 'Chong'
+      }
+    });
+    console.log('meta', meta, this.version);
   },
 
   methods: {
@@ -101,8 +114,8 @@ export default {
         frameDescription: 'Invoice #3847 in THB',
         defaultPaymentMethod: methodName ?? 'credit_card',
         onCreateTokenSuccess: (response) => {
-          console.log('onCreateTokenSuccess', response)
-          this.omiseChargesBySourceId(response)
+          console.log('onCreateTokenSuccess')
+          this.omiseChargesBySourceId(methodName, response)
         },
         onFormClosed: () => {
           console.log('onFormClosed')
@@ -137,33 +150,24 @@ export default {
       })
     },
 
-    async omiseChargesBySourceId(sourceId) {
+    async omiseChargesBySourceId(type, sourceId) {
 
+      console.log('sourceId', sourceId);
       const payload = {
         ...this.payload,
-        source: sourceId,
+        // source: sourceId,
+        // type: methodName
       }
 
-      // const response = await this.$axios.$post('https://api.omise.co/charges', payload)
-      // console.log(response);
+      if (type == 'credit_card') {
+        payload.card = sourceId
+      }
+      else {
+        payload.source = sourceId
+      }
 
-      // Omise.createSource(methodName, payload, function (statusCode, response) {
-      //   console.log(response)
-      // });
-
-      const response = await this.$axios.$post('dev/omise/checkout', payload)
-      console.log(response);
-      // console.log(_omise);
-      // const charge = await _omise.charges.capture(sourceId);
-      // console.log('charge', charge);
-
-      // Omise.createCharge(payload, (statusCode, response) => {
-      //   if (statusCode === 200) {
-      //     console.log('Success: ' + response.id)
-      //   } else {
-      //     console.log('Error: ' + response.message)
-      //   }
-      // })
+      const response = await this.$axios.post('/omise/checkout', payload)
+      console.log('response', response);
     },
 
     async omiseChargesByToken(tokenId) {
@@ -172,13 +176,13 @@ export default {
         amount: 100000,
         currency: "THB",
         description: "Order-345678",
-        omiseToken: tokenId,
+        card: tokenId,
       }
 
       // delay 1 sec
       await new Promise(resolve => setTimeout(resolve, 1800));
 
-      const response = await this.$axios.$post('dev/omise/checkout', payload)
+      const response = await this.$axios.post('/omise/checkout', payload)
       console.log(response);
     }
 
