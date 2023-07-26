@@ -2,7 +2,7 @@
   <div class="p-10">
     <h1 class="text-3xl font-bold mb-4">{{ title }}</h1>
 
-    <form id="checkoutForm" method="GET" action="/" @submit.prevent="submitHandler">
+    <form id="checkoutForm" method="GET" action="/" @submit.prevent="submitHandler" v-if="radeayOmise">
 
       <div class="flex gap-2">
         <button type="submit" :class="styles.btnPrimary">{{ `Get Token` }}</button>
@@ -12,8 +12,10 @@
             :key="index">{{ item.name }}</button>
         </div>
       </div>
-
     </form>
+    <div v-else>
+      {{ `Omise is undefined` }}
+    </div>
   </div>
 </template>
 
@@ -22,8 +24,6 @@
 
 export default {
   name: 'IndexPage',
-
-
   data() {
     return {
       title: 'Nuxtjs x omise',
@@ -75,14 +75,6 @@ export default {
 
   async mounted() {
     this.initOmise()
-
-    // test api 
-    const meta = await this.$axios.get('/hello', {
-      params: {
-        name: 'Chong'
-      }
-    });
-    console.log('meta', meta, this.version);
   },
 
   methods: {
@@ -93,11 +85,6 @@ export default {
       }
 
       Omise.setPublicKey(this.omisePublicKey)
-      // Omise.setLocale('th')
-
-      // console.log(window);
-      // console.log(Omise);
-
       this.radeayOmise = true
     },
 
